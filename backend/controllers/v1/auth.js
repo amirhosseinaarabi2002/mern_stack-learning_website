@@ -1,25 +1,32 @@
 const userModel = require("../../models/user");
+const banUserModel = require("../../models/ban-phone");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const registerValidator = require("../../validators/register");
+const registerValidator = require("./../../validators/register");
 
 exports.register = async (req, res) => {
   const validationResult = registerValidator(req.body);
-
-  if (validationResult !== true) {
+  if (validationResult != true) {
     return res.status(422).json(validationResult);
   }
 
-  const { username, name, password, email, phone } = req.body;
+  const { username, name, email, password, phone } = req.body;
 
-  const isUserExist = await userModel.findOne({
+  const isUserExists = await userModel.findOne({
     $or: [{ username }, { email }],
   });
 
-  if (isUserExist) {
+  if (isUserExists) {
     return res.status(409).json({
-      message: "username or email is duplicated!",
+      message: "username or email is duplicated",
+    });
+  }
+
+  const isUserBan = await banUserModel.find({ phone });
+  if (isUserBan.length) {
+    return res.status(409).json({
+      message: "this user is banned!",
     });
   }
 
@@ -28,9 +35,9 @@ exports.register = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await userModel.create({
-    name,
-    username,
     email,
+    username,
+    name,
     phone,
     password: hashedPassword,
     role: countOfUsers > 0 ? "USER" : "ADMIN",
@@ -43,12 +50,37 @@ exports.register = async (req, res) => {
     expiresIn: "30 day",
   });
 
-  return res.status(201).json({
-    user: userObject,
-    accessToken,
-  });
+  return res.status(201).json({ user: userObject, accessToken });
+
+  // Coding
 };
 
-exports.login = async (req, res) => {};
+exports.login = async (req, res) => {
+  const { identifier, password } = req.body;
+
+  const user = await userModel.findOne({
+    $or: [{ email: identifier }, { username: identifier }],
+  });
+
+  if (!user) {
+    res.status(401).json({
+      message: "there is no user with this username and password",
+    });
+  }
+
+  const isValidPassword = await bcrypt.compare(password, user.password);
+
+  if (!isValidPassword) {
+    res.status(401).json({
+      message: "password is not valid!",
+    });
+  }
+
+  const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "30 day",
+  });
+
+  return res.json({ accessToken });
+};
 
 exports.getMe = async (req, res) => {};

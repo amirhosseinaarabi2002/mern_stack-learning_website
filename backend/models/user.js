@@ -25,13 +25,13 @@ const schema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: "USER",
       enum: ["ADMIN", "USER"],
+      default: "USER",
     },
   },
   { timestamps: true }
 );
 
-const model = mongoose.model("user", schema);
+const model = mongoose.model("User", schema);
 
 module.exports = model;
