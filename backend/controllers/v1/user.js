@@ -40,3 +40,37 @@ exports.removeUser = async (req, res) => {
     message: "user removed successfully!",
   });
 };
+
+exports.changeRole = async (req, res) => {
+  const { id } = req.body;
+
+  const isValidUserID = isValidObjectId(id);
+
+  if (!isValidUserID) {
+    res.status(409).json({
+      message: "userID is not valid!",
+    });
+  }
+
+  const user = await userModel.findOne({ _id: id });
+
+  let newRole = user.role === "ADMIN" ? "USER" : "ADMIN";
+
+  // console.log(newRole);
+  const updatedRole = await userModel.findByIdAndUpdate(
+    {
+      _id: id,
+    },
+    { role: newRole }
+  );
+
+  if (updatedRole) {
+    return res.json({
+      message: "user role changed successfully!",
+    });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  
+};

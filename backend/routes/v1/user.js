@@ -9,7 +9,13 @@ router
   .route("/ban/:id")
   .post(authMiddleware, isAdminMiddleware, userController.banUser);
 
-router.route("/").get(authMiddleware, isAdminMiddleware, userController.getAll);
+router
+  .route("/")
+  .get(authMiddleware, isAdminMiddleware, userController.getAll)
+  .put(authMiddleware, userController.updateUser);
+router
+  .route("/role")
+  .put(authMiddleware, isAdminMiddleware, userController.changeRole);
 
 router
   .route("/:id")
