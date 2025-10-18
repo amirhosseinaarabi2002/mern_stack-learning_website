@@ -12,7 +12,7 @@ const schema = mongoose.Schema(
       required: true,
     },
     creator: {
-      type: mongoose.type.ObjectId,
+      type: mongoose.Types.ObjectId,
       ref: "User",
       required: true,
     },
