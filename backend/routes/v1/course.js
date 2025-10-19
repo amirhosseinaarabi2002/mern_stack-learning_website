@@ -1,5 +1,5 @@
 const express = require("express");
-const couresController = require("./../../controllers/v1/course");
+const coursesController = require("./../../controllers/v1/course");
 const multer = require("multer");
 const multerStorage = require("../../utils/uploader");
 const authMiddleware = require("../../middlewares/auth");
@@ -15,7 +15,7 @@ router
     ),
     authMiddleware,
     isAdminMiddleware,
-    couresController.create
+    coursesController.create
   );
 
 router
@@ -26,15 +26,20 @@ router
     ),
     authMiddleware,
     isAdminMiddleware,
-    couresController.createSession
+    coursesController.createSession
   );
 
-router.route("/sessions").get(couresController.getAllSessions);
+router.route("/sessions").get(coursesController.getAllSessions);
 
-router.route("/:href/:sessionID").get(couresController.getSessionInfo);
+router.route("/:href/:sessionID").get(coursesController.getSessionInfo);
 
 router
   .route("/sessions/:id")
-  .delete(authMiddleware, isAdminMiddleware, couresController.removeSession);
+  .delete(authMiddleware, isAdminMiddleware, coursesController.removeSession);
+
+router.route("/:id/register").post(authMiddleware, coursesController.register);
+
+router.route("/category/:href").get(coursesController.getCoursesByCategory)
+router.route("/:href").get(authMiddleware, coursesController.getOne)
 
 module.exports = router;
