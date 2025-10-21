@@ -1,8 +1,9 @@
 const courseModel = require("./../../models/course");
-const categoryModel = require("./../../models/category");
 const sessionModel = require("./../../models/session");
-const commentModel = require("./../../models/comment");
+const categoryModel = require("./../../models/category");
+const commentsModel = require("./../../models/comment");
 const courseUserModel = require("./../../models/course-user");
+const { default: mongoose } = require("mongoose");
 
 exports.create = async (req, res) => {
   const {
@@ -36,6 +37,54 @@ exports.create = async (req, res) => {
   return res.status(201).json(mainCourse);
 };
 
+exports.getOne = async (req, res) => {
+  const course = await courseModel
+    .findOne({ href: req.params.href })
+    .populate("creator", "-password")
+    .populate("categoryID");
+
+  const sessions = await sessionModel.find({ course: course?._id }).lean();
+  const comments = await commentsModel
+    .find({ course: course?._id, isAccept: 1 })
+    .populate("creator", "-password")
+    .populate("course")
+    .lean();
+
+  const courseStudentsCount = await courseUserModel
+    .find({
+      course: course?._id,
+    })
+    .countDocuments();
+
+  const isUserRegisteredToThisCourse = !!(await courseUserModel.findOne({
+    user: req.user._id,
+    course: course?._id,
+  }));
+
+  let allComments = [];
+
+  comments.forEach((comment) => {
+    comments.forEach((answerComment) => {
+      if (String(comment._id) == String(answerComment.mainCommentID)) {
+        allComments.push({
+          ...comment,
+          course: comment.course.name,
+          creator: comment.creator.name,
+          answerComment,
+        });
+      }
+    });
+  });
+
+  res.json({
+    course,
+    sessions,
+    comments: allComments,
+    courseStudentsCount,
+    isUserRegisteredToThisCourse,
+  });
+};
+
 exports.createSession = async (req, res) => {
   const { title, free, time } = req.body;
   const { id } = req.params;
@@ -44,7 +93,7 @@ exports.createSession = async (req, res) => {
     title,
     time,
     free,
-    video: req.file.filename,
+    video: "Video.mp4", // req.file.filename
     course: id,
   });
 
@@ -120,35 +169,56 @@ exports.getCoursesByCategory = async (req, res) => {
 
     res.json(categoryCourses);
   } else {
-    res.json([]);
+    res.josn([]);
   }
 };
 
-exports.getOne = async (req, res) => {
-  const course = await courseModel
-    .findOne({ href: req.params.href })
-    .populate("creator", "-password -__v")
-    .select("-__v");
+exports.remove = async (req, res) => {
+  const isObjectIDValid = mongoose.Types.ObjectId.isValid(req.params.id);
 
-  const sessions = await sessionModel.find({ course: course._id }).lean();
-  const comments = await commentModel
-    .find({ course: course._id, isAccept: 1 })
-    .populate("creator", "-password")
-    .lean();
-  const courseStudentCount = await courseUserModel
-    .find({ course: course._id })
-    .countDocuments();
+  if (!isObjectIDValid) {
+    return res.status(409).json({
+      messgae: "Course ID is not valid !!",
+    });
+  }
 
-  const isUserRegisteredToThisCourse = !!(await courseUserModel.findOne({
-    user: req.user._id,
-    course: course._id,
-  }));
-
-  res.json({
-    course: course,
-    sessions: sessions,
-    comments: comments,
-    courseStudentCount: courseStudentCount,
-    isUserRegisteredToThisCourse: isUserRegisteredToThisCourse,
+  const deletedCourse = await courseModel.findOneAndRemove({
+    _id: req.params.id,
   });
+
+  if (!deletedCourse) {
+    return res.status(404).json({
+      messgae: "Course not found !!",
+    });
+  }
+
+  return res.json(deletedCourse);
+};
+
+exports.getRelated = async (req, res) => {
+  const { href } = req.params;
+
+  const course = await courseModel.findOne({ href });
+
+  if (!course) {
+    return res.status(404).json({
+      messgae: "Course not found !!",
+    });
+  }
+
+  let relatedCourses = await courseModel.find({
+    categoryID: course.categoryID,
+  });
+
+  relatedCourses = relatedCourses.filter((course) => course.href !== href);
+
+  return res.json(relatedCourses);
+};
+
+exports.popular = async (req, res) => {
+  // Coding ...✌️
+};
+
+exports.presell = async (req, res) => {
+  // Coding ...✌️
 };

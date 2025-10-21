@@ -17,7 +17,7 @@ const schema = mongoose.Schema(
       required: true,
     },
   },
-  { timeStamps: true }
+  { timestamps: true }
 );
 
 const model = mongoose.model("CourseUser", schema);

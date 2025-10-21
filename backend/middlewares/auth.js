@@ -1,12 +1,12 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../models/user");
+const userModel = require("./../models/user");
 
 module.exports = async (req, res, next) => {
   const authHeader = req.header("Authorization")?.split(" ");
 
   if (authHeader?.length !== 2) {
     return res.status(403).json({
-      message: "this route is protected and you can not have access",
+      message: "This route is protected and you can't have access to it !!",
     });
   }
 
@@ -17,7 +17,7 @@ module.exports = async (req, res, next) => {
 
     const user = await userModel.findById(jwtPayload.id).lean();
 
-    Reflect.deleteProperty(user, "password")
+    Reflect.deleteProperty(user, "password");
 
     req.user = user;
 

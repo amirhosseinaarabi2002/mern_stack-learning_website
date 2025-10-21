@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const { default: mongoose } = require("mongoose");
 const categoryModel = require("./../../models/category");
 
 exports.create = async (req, res) => {
@@ -9,27 +9,25 @@ exports.create = async (req, res) => {
 };
 
 exports.getAll = async (req, res) => {
-  const categories = await categoryModel.find({}).select();
+  const categories = await categoryModel.find({});
   return res.json(categories);
 };
 
 exports.remove = async (req, res) => {
   const { id } = req.params;
+  const isValidID = mongoose.Types.ObjectId.isValid(id);
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(409).json({ message: "Category ID is not valid!" });
+  if (!isValidID) {
+    return res.status(409).json({
+      message: "Category ID is not valid !!",
+    });
   }
 
-  const deletedCategory = await categoryModel.findByIdAndDelete(id);
-
-  if (!deletedCategory) {
-    return res.status(404).json({ message: "Category not found!" });
-  }
-
-  return res.json({
-    message: "Category deleted successfully",
-    deletedCategory,
+  const deletedCategory = await categoryModel.findOneAndRemove({
+    _id: id,
   });
+
+  return res.json(deletedCategory);
 };
 
 exports.update = async (req, res) => {

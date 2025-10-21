@@ -1,7 +1,7 @@
 const userModel = require("../../models/user");
-const banUserModel = require("../../models/ban-phone");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const banUserModel = require("./../../models/ban-phone");
 
 const registerValidator = require("./../../validators/register");
 
@@ -24,9 +24,10 @@ exports.register = async (req, res) => {
   }
 
   const isUserBan = await banUserModel.find({ phone });
+
   if (isUserBan.length) {
     return res.status(409).json({
-      message: "this user is banned!",
+      message: "This phone number ban !",
     });
   }
 
@@ -63,16 +64,16 @@ exports.login = async (req, res) => {
   });
 
   if (!user) {
-    res.status(401).json({
-      message: "there is no user with this username and password",
+    return res.status(401).json({
+      message: "There is no user with this email or username",
     });
   }
 
-  const isValidPassword = await bcrypt.compare(password, user.password);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  if (!isValidPassword) {
-    res.status(401).json({
-      message: "password is not valid!",
+  if (!isPasswordValid) {
+    return res.status(401).json({
+      message: "Password in not valid !!",
     });
   }
 
